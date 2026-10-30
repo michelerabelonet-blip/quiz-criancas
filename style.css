@@ -74,9 +74,11 @@ label { font-weight: 700; display: block; margin-bottom: 6px; }
   padding: 11px 12px; border-radius: 12px; border: 2px solid var(--linha); background: var(--cartao);
   display: flex; justify-content: space-between; align-items: center; gap: 6px; min-width: 0;
 }
-.nome:hover { border-color: var(--bala); }
+.nome:not([disabled]):hover { border-color: var(--bala); }
+.nome[disabled] { cursor: default; }
+.nome.usado { opacity: .55; }
 .nome.usado { color: var(--tinta-suave); background: transparent; border-style: dashed; }
-.nome.usado::after { content: "usado"; font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+.nome.usado::after { content: "já escolhido"; font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
 .nome.escolhido { background: var(--bala); border-color: var(--bala); color: #fff; }
 .nome.escolhido::after { content: "✓"; }
 .dica { font-size: .9rem; color: var(--tinta-suave); }

@@ -6,9 +6,9 @@
 <title>Quem é essa criança?</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap">
-<link rel="stylesheet" href="style.css?v=3">
-<script src="config.js?v=3"></script>
-<script src="lightbox.js?v=3" defer></script>
+<link rel="stylesheet" href="style.css?v=4">
+<script src="config.js?v=4"></script>
+<script src="lightbox.js?v=4" defer></script>
 </head>
 <body>
 <main class="wrap" id="app"></main>
@@ -86,55 +86,43 @@ function telaFoto() {
       <div class="moldura"><img src="${foto(c)}" alt="Foto de infância número ${st.i + 1}"></div>
       <div class="legenda ${atual ? "" : "vazia"}">${atual ? esc(atual) : "quem é?"}</div>
     </div>
-    <p class="dica">Cada pessoa aparece em uma foto só. Nomes já usados ficam marcados, mas você pode trocar.</p>
-    <div class="nomes">${N.map(n => `<button type="button" class="nome ${n === atual ? "escolhido" : usados[n] ? "usado" : ""}" data-n="${esc(n)}">${esc(n)}</button>`).join("")}</div>
-    <p class="aviso" id="aviso" hidden></p>
+    <p class="dica">Toque no nome para escolher. A escolha é definitiva: não dá para voltar nem trocar. Nomes já escolhidos ficam bloqueados.</p>
+    <div class="nomes">${N.map(n => `<button type="button" class="nome ${usados[n] ? "usado" : ""}" data-n="${esc(n)}" ${usados[n] ? "disabled" : ""}>${esc(n)}</button>`).join("")}</div>
     <p class="erro" id="msg" hidden></p>
-    <div class="nav">
-      <button class="btn sec" id="ant" ${st.i === 0 ? "disabled" : ""}>Anterior</button>
-      <button class="btn" id="prox">${st.i === TOTAL - 1 ? "Enviar respostas" : "Próxima"}</button>
+    <div class="nav" id="navEnvio" hidden>
+      <button class="btn" id="reenviar">Tentar enviar de novo</button>
     </div>`;
-  app.querySelectorAll(".nome").forEach(b => b.addEventListener("click", () => {
-    const n = b.dataset.n;
-    // se o nome estava em outra foto, libera aquela
-    Object.keys(st.resp).forEach(k => { if (st.resp[k] === n && k !== c) delete st.resp[k]; });
-    st.resp[c] = n; salvar();
-    if (st.i < TOTAL - 1) { st.i++; salvar(); setTimeout(render, 180); b.classList.add("escolhido"); }
-    else { render(); }
+  let travado = false;
+  app.querySelectorAll(".nome:not([disabled])").forEach(b => b.addEventListener("click", () => {
+    if (travado) return;
+    travado = true;
+    st.resp[c] = b.dataset.n;
+    b.classList.add("escolhido");
+    app.querySelectorAll(".nome").forEach(x => x.disabled = true);
+    app.querySelector(".legenda").textContent = b.dataset.n;
+    app.querySelector(".legenda").classList.remove("vazia");
+    if (st.i < TOTAL - 1) { st.i++; salvar(); setTimeout(render, 350); }
+    else { salvar(); enviar(); }
   }));
-  document.getElementById("ant").onclick = () => { st.i--; salvar(); render(); };
-  let confirmou = false;
-  document.getElementById("prox").onclick = async e => {
-    if (st.i < TOTAL - 1) { st.i++; salvar(); return render(); }
-    const b = e.currentTarget, aviso = document.getElementById("aviso"), msg = document.getElementById("msg");
-    const faltam = TOTAL - respondidas();
-    if (faltam && !confirmou) {
-      confirmou = true;
-      aviso.hidden = false;
-      aviso.textContent = `Faltam ${faltam} foto${faltam > 1 ? "s" : ""} sem resposta e elas contam como erro. Volte com "Anterior" para responder ou toque de novo para enviar assim mesmo.`;
-      b.textContent = "Enviar assim mesmo";
-      return;
-    }
-    b.disabled = true; b.textContent = "Enviando...";
-    try {
-      await rpc("quiz_enviar", { p_nome: st.nome, p_respostas: st.resp, p_dispositivo: DISP });
-      st.enviado = true; salvar(); render();
-    } catch (err) {
-      msg.hidden = false;
-      if (/JA_ENVIOU_CELULAR/.test(err.message)) {
-        msg.textContent = "Este celular já enviou respostas. Só vale uma participação por celular.";
-        b.textContent = "Já enviado";
-        return;
-      }
-      if (/JA_ENVIOU_NOME/.test(err.message)) {
-        msg.textContent = `Já existe uma resposta com o nome "${st.nome}". Se não foi você, fale com quem está organizando.`;
-        b.textContent = "Já enviado";
-        return;
-      }
-      msg.textContent = "Não foi possível enviar. Confira a internet e tente de novo.";
-      b.disabled = false; b.textContent = "Enviar respostas";
-    }
-  };
+  // se a pessoa já escolheu a última e o envio falhou, mostra o botão de reenviar
+  if (st.i === TOTAL - 1 && st.resp[c]) enviar();
+  document.getElementById("reenviar").onclick = enviar;
+}
+
+async function enviar() {
+  const msg = document.getElementById("msg"), nav = document.getElementById("navEnvio"), b = document.getElementById("reenviar");
+  msg.hidden = false; msg.className = "dica"; msg.textContent = "Enviando suas respostas...";
+  nav.hidden = true;
+  try {
+    await rpc("quiz_enviar", { p_nome: st.nome, p_respostas: st.resp, p_dispositivo: DISP });
+    st.enviado = true; salvar(); render();
+  } catch (err) {
+    msg.className = "erro";
+    if (/JA_ENVIOU_CELULAR/.test(err.message)) { msg.textContent = "Este celular já enviou respostas. Só vale uma participação por celular."; return; }
+    if (/JA_ENVIOU_NOME/.test(err.message)) { msg.textContent = `Já existe uma resposta com o nome "${st.nome}". Se não foi você, fale com quem está organizando.`; return; }
+    msg.textContent = "Não foi possível enviar. Confira a internet e toque em Tentar enviar de novo.";
+    nav.hidden = false;
+  }
 }
 
 function telaFim() {
