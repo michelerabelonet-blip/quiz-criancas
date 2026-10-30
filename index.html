@@ -148,6 +148,16 @@ function telaFim() {
 }
 
 render();
+
+// se o ranking foi zerado, libera este celular para jogar de novo
+if (st.enviado) {
+  rpc("quiz_pode_participar", { p_nome: st.nome, p_dispositivo: DISP }).then(r => {
+    if (r === "OK") {
+      st = { nome: "", i: 0, resp: {}, etapa: "inicio", enviado: false };
+      salvar(); render();
+    }
+  }).catch(() => {});
+}
 </script>
 </body>
 </html>
