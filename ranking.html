@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Ranking da cesta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="style.css">
+<script src="config.js"></script>
+<style>
+  .rank { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-variant-numeric: tabular-nums; }
+  .rank li { display: grid; grid-template-columns: 2.4rem 1fr auto; align-items: center; gap: 12px; background: var(--cartao); border-radius: 14px; padding: 12px 16px; }
+  .rank .pos { font-family: var(--display); font-weight: 800; font-size: 1.4rem; color: var(--tinta-suave); }
+  .rank .quem { font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+  .rank .quem small { display: block; font-weight: 600; color: var(--tinta-suave); }
+  .rank .pts { font-family: var(--display); font-weight: 800; font-size: 1.5rem; }
+  .rank .pts small { font: 600 .85rem var(--texto); color: var(--tinta-suave); }
+  .rank li.ouro { background: var(--bala); color: #fff; }
+  .rank li.ouro .pos, .rank li.ouro small { color: #ffe3ec; }
+  .acoes { display: flex; gap: 10px; flex-wrap: wrap; }
+  .acoes .btn { flex: 1 1 160px; }
+  .gab { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 14px; }
+</style>
+</head>
+<body>
+<main class="wrap" id="app">
+  <span class="etiqueta">Área do organizador</span>
+  <h1>Ranking da <em>cesta</em></h1>
+  <form id="f">
+    <label for="senha">Senha do organizador</label>
+    <input type="password" id="senha" autocomplete="current-password" required>
+  </form>
+  <div class="nav" style="position:static;background:none"><button class="btn" form="f" type="submit">Ver ranking</button></div>
+  <p class="erro" id="msg" hidden></p>
+</main>
+<script>
+const app = document.getElementById("app");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const hora = d => new Date(d).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+let senha = "";
+
+document.getElementById("f").addEventListener("submit", async e => {
+  e.preventDefault();
+  senha = document.getElementById("senha").value;
+  const msg = document.getElementById("msg");
+  try { await carregar(); }
+  catch (err) { msg.hidden = false; msg.textContent = /senha/i.test(err.message) ? "Senha incorreta." : "Não foi possível carregar. Tente de novo."; }
+});
+
+async function carregar() {
+  const lista = await rpc("quiz_ranking", { p_senha: senha });
+  const total = QUIZ.fotos.length;
+  app.innerHTML = `
+    <span class="etiqueta">${lista.length} participante${lista.length === 1 ? "" : "s"}</span>
+    <h1>Ranking da <em>cesta</em></h1>
+    ${lista.length ? `<p class="sub">Empate é decidido por quem enviou primeiro.</p>` : `<p class="sub">Ninguém enviou respostas ainda. Toque em Atualizar depois que a turma responder.</p>`}
+    <ol class="rank">${lista.map((p, i) => `
+      <li class="${i === 0 ? "ouro" : ""}">
+        <span class="pos">${i + 1}º</span>
+        <span class="quem">${esc(p.nome)}<small>enviou às ${hora(p.enviado_em)}</small></span>
+        <span class="pts">${p.acertos}<small> / ${total}</small></span>
+      </li>`).join("")}</ol>
+    <div class="acoes">
+      <button class="btn sec" id="atualizar">Atualizar</button>
+      <button class="btn" id="revelar">Revelar quem é quem</button>
+    </div>
+    <div id="gab"></div>`;
+  document.getElementById("atualizar").onclick = carregar;
+  document.getElementById("revelar").onclick = revelar;
+}
+
+async function revelar() {
+  const g = await rpc("quiz_gabarito_revelar", { p_senha: senha });
+  const mapa = Object.fromEntries(g.map(x => [x.codigo, x.nome]));
+  document.getElementById("gab").innerHTML = `
+    <h2 style="margin-block:8px 14px">Quem é quem</h2>
+    <div class="gab">${QUIZ.fotos.map((c, i) => `<div class="mini"><img src="fotos/${c}.jpg" alt="Foto ${i + 1}"><span>${esc(mapa[c] || "")}</span></div>`).join("")}</div>`;
+  document.getElementById("revelar").hidden = true;
+}
+</script>
+</body>
+</html>

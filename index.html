@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Quem é essa criança?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="style.css">
+<script src="config.js"></script>
+</head>
+<body>
+<main class="wrap" id="app"></main>
+
+<script>
+const F = QUIZ.fotos, N = QUIZ.nomes, TOTAL = F.length;
+const LS = "quiz-criancas-v1";
+let st = { nome: "", i: 0, resp: {}, etapa: "inicio", enviado: false };
+try { const s = JSON.parse(localStorage.getItem(LS)); if (s) st = Object.assign(st, s); } catch (e) {}
+const salvar = () => { try { localStorage.setItem(LS, JSON.stringify(st)); } catch (e) {} };
+const app = document.getElementById("app");
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const foto = c => "fotos/" + c + ".jpg";
+const giro = i => ((i * 37) % 5 - 2) * 0.8 + "deg";
+const respondidas = () => F.filter(c => st.resp[c]).length;
+
+// pré-carrega as fotos
+F.forEach(c => { const im = new Image(); im.src = foto(c); });
+
+function render() {
+  if (st.enviado) return telaFim();
+  if (st.etapa === "inicio" || !st.nome) return telaInicio();
+  if (st.etapa === "revisao") return telaRevisao();
+  telaFoto();
+  window.scrollTo(0, 0);
+}
+
+function telaInicio() {
+  app.innerHTML = `
+    <span class="etiqueta">Dinâmica da cesta de doces</span>
+    <h1>Quem é essa <em>criança?</em></h1>
+    <p class="sub">São ${TOTAL} fotos de infância da turma. Para cada foto, escolha de quem você acha que é. Quem acertar mais leva a cesta de doces. O resultado só sai no final.</p>
+    <div class="polaroid" style="--giro:-2deg"><div class="moldura"><img src="${foto(F[0])}" alt="Foto de infância"></div><div class="legenda vazia">quem será?</div></div>
+    <form id="f">
+      <label for="nome">Seu nome</label>
+      <input type="text" id="nome" maxlength="60" autocomplete="name" placeholder="Ex.: Ana Luiza" value="${esc(st.nome)}" required>
+    </form>
+    <div class="nav"><button class="btn" form="f" type="submit">Começar</button></div>`;
+  document.getElementById("f").addEventListener("submit", e => {
+    e.preventDefault();
+    const v = document.getElementById("nome").value.trim();
+    if (!v) return;
+    st.nome = v; st.etapa = "foto"; salvar(); render();
+  });
+}
+
+function telaFoto() {
+  const c = F[st.i], atual = st.resp[c] || "";
+  const usados = {};
+  Object.entries(st.resp).forEach(([k, v]) => { if (v && k !== c) usados[v] = true; });
+  app.innerHTML = `
+    <div class="topo"><span class="etiqueta">Criança ${st.i + 1} de ${TOTAL}</span><span class="dica">${respondidas()} respondidas</span></div>
+    <div class="progresso"><div style="width:${(respondidas() / TOTAL) * 100}%"></div></div>
+    <div class="polaroid" style="--giro:${giro(st.i)}">
+      <div class="moldura"><img src="${foto(c)}" alt="Foto de infância número ${st.i + 1}"></div>
+      <div class="legenda ${atual ? "" : "vazia"}">${atual ? esc(atual) : "quem é?"}</div>
+    </div>
+    <p class="dica">Cada pessoa aparece em uma foto só. Nomes já usados ficam marcados, mas você pode trocar.</p>
+    <div class="nomes">${N.map(n => `<button type="button" class="nome ${n === atual ? "escolhido" : usados[n] ? "usado" : ""}" data-n="${esc(n)}">${esc(n)}</button>`).join("")}</div>
+    <div class="nav">
+      <button class="btn sec" id="ant" ${st.i === 0 ? "disabled" : ""}>Anterior</button>
+      <button class="btn" id="prox">${st.i === TOTAL - 1 ? "Revisar" : "Próxima"}</button>
+    </div>`;
+  app.querySelectorAll(".nome").forEach(b => b.addEventListener("click", () => {
+    const n = b.dataset.n;
+    // se o nome estava em outra foto, libera aquela
+    Object.keys(st.resp).forEach(k => { if (st.resp[k] === n && k !== c) delete st.resp[k]; });
+    st.resp[c] = n; salvar();
+    if (st.i < TOTAL - 1) { st.i++; salvar(); setTimeout(render, 180); b.classList.add("escolhido"); }
+    else { render(); }
+  }));
+  document.getElementById("ant").onclick = () => { st.i--; salvar(); render(); };
+  document.getElementById("prox").onclick = () => {
+    if (st.i < TOTAL - 1) st.i++; else st.etapa = "revisao";
+    salvar(); render();
+  };
+}
+
+function telaRevisao() {
+  const faltam = TOTAL - respondidas();
+  app.innerHTML = `
+    <span class="etiqueta">Quase lá, ${esc(st.nome)}</span>
+    <h2>Confira suas respostas</h2>
+    <p class="sub">Toque em uma foto para mudar a resposta.</p>
+    ${faltam ? `<p class="aviso">Faltam ${faltam} foto${faltam > 1 ? "s" : ""} sem resposta. Elas contam como erro.</p>` : ""}
+    <div class="revisao">${F.map((c, i) => `<button class="mini" data-i="${i}"><img src="${foto(c)}" alt="Foto ${i + 1}"><span class="${st.resp[c] ? "" : "falta"}">${st.resp[c] ? esc(st.resp[c]) : "sem resposta"}</span></button>`).join("")}</div>
+    <p class="erro" id="msg" hidden></p>
+    <div class="nav">
+      <button class="btn sec" id="voltar">Voltar</button>
+      <button class="btn" id="enviar">Enviar respostas</button>
+    </div>`;
+  app.querySelectorAll(".mini").forEach(b => b.onclick = () => { st.i = +b.dataset.i; st.etapa = "foto"; salvar(); render(); });
+  document.getElementById("voltar").onclick = () => { st.etapa = "foto"; st.i = TOTAL - 1; salvar(); render(); };
+  document.getElementById("enviar").onclick = async e => {
+    const b = e.currentTarget, msg = document.getElementById("msg");
+    b.disabled = true; b.textContent = "Enviando...";
+    try {
+      await rpc("quiz_enviar", { p_nome: st.nome, p_respostas: st.resp });
+      st.enviado = true; salvar(); render();
+    } catch (err) {
+      msg.hidden = false; msg.textContent = "Não foi possível enviar. Confira a internet e tente de novo.";
+      b.disabled = false; b.textContent = "Enviar respostas";
+    }
+  };
+}
+
+function telaFim() {
+  app.className = "wrap fim";
+  app.innerHTML = `
+    <span class="etiqueta">Respostas enviadas</span>
+    <h1>Valeu, <em>${esc(st.nome)}</em>!</h1>
+    <p class="sub">Você respondeu ${respondidas()} de ${TOTAL} fotos. O ranking e o vencedor da cesta de doces serão revelados no final da dinâmica.</p>`;
+}
+
+render();
+</script>
+</body>
+</html>
