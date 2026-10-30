@@ -55,11 +55,19 @@ function telaInicio() {
       <label for="nome">Seu nome</label>
       <input type="text" id="nome" maxlength="60" autocomplete="name" placeholder="Ex.: Ana Luiza" value="${esc(st.nome)}" required>
     </form>
+    <p class="erro" id="msgIni" hidden></p>
     <div class="nav"><button class="btn" form="f" type="submit">Começar</button></div>`;
-  document.getElementById("f").addEventListener("submit", e => {
+  document.getElementById("f").addEventListener("submit", async e => {
     e.preventDefault();
     const v = document.getElementById("nome").value.trim();
     if (!v) return;
+    const b = app.querySelector("button[form=f]"), msg = document.getElementById("msgIni");
+    b.disabled = true; b.textContent = "Conferindo...";
+    let r = "OK";
+    try { r = await rpc("quiz_pode_participar", { p_nome: v, p_dispositivo: DISP }); } catch (err) {}
+    b.disabled = false; b.textContent = "Começar";
+    if (r === "JA_ENVIOU_CELULAR") { msg.hidden = false; msg.textContent = "Este celular já enviou respostas. Só vale uma participação por celular."; return; }
+    if (r === "JA_ENVIOU_NOME") { msg.hidden = false; msg.textContent = `Já existe uma resposta com o nome "${v}". Se for outra pessoa com o mesmo nome, use também o sobrenome.`; return; }
     st.nome = v; st.etapa = "foto"; salvar(); render();
   });
 }
