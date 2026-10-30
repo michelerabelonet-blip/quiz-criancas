@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex">
-<title>Ranking da cesta</title>
+<title>Ranking Quem é essa criança?</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap">
 <link rel="stylesheet" href="style.css">
@@ -27,7 +27,7 @@
 <body>
 <main class="wrap" id="app">
   <span class="etiqueta">Área do organizador</span>
-  <h1>Ranking da <em>cesta</em></h1>
+  <h1>Ranking <em>Quem é essa criança?</em></h1>
   <form id="f">
     <label for="senha">Senha do organizador</label>
     <input type="password" id="senha" autocomplete="current-password" required>
@@ -54,7 +54,7 @@ async function carregar() {
   const total = QUIZ.fotos.length;
   app.innerHTML = `
     <span class="etiqueta">${lista.length} participante${lista.length === 1 ? "" : "s"}</span>
-    <h1>Ranking da <em>cesta</em></h1>
+    <h1>Ranking <em>Quem é essa criança?</em></h1>
     ${lista.length ? `<p class="sub">Empate é decidido por quem enviou primeiro.</p>` : `<p class="sub">Ninguém enviou respostas ainda. Toque em Atualizar depois que a turma responder.</p>`}
     <ol class="rank">${lista.map((p, i) => `
       <li class="${i === 0 ? "ouro" : ""}">
