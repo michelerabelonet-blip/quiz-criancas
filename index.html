@@ -47,15 +47,15 @@ function render() {
 
 function telaInicio() {
   app.innerHTML = `
-    <span class="etiqueta">Dinâmica da cesta de doces</span>
-    <h1>Quem é essa <em>criança?</em></h1>
-    <p class="sub">São ${TOTAL} fotos de infância da turma. Para cada foto, escolha de quem você acha que é. Quem acertar mais leva a cesta de doces. O resultado só sai no final.</p>
-    <div class="polaroid" style="--giro:-2deg"><div class="moldura"><img src="${foto(F[0])}" alt="Foto de infância"></div><div class="legenda vazia">quem será?</div></div>
-    <form id="f">
-      <label for="nome">Seu nome e sobrenome</label>
-      <input type="text" id="nome" maxlength="60" autocomplete="name" placeholder="Ex.: Bruno Cortez" value="${esc(st.nome)}" required>
-      <p class="dica" style="margin-top:6px">Use o sobrenome: temos dois Brunos e duas Thais na turma.</p>
-    </form>
+    <div class="entrada">
+      <span class="etiqueta">Dinâmica</span>
+      <h1>Quem é essa <em>criança?</em></h1>
+      <form id="f" class="campo-nome">
+        <label for="nome">Seu nome</label>
+        <input type="text" id="nome" maxlength="60" autocomplete="name" placeholder="Nome e sobrenome" value="${esc(st.nome)}" required autofocus>
+        <p class="dica">Use o sobrenome: temos dois Brunos e duas Thais na turma.</p>
+      </form>
+    </div>
     <p class="erro" id="msgIni" hidden></p>
     <div class="nav"><button class="btn" form="f" type="submit">Começar</button></div>`;
   document.getElementById("f").addEventListener("submit", async e => {
@@ -78,6 +78,7 @@ function telaFoto() {
   const usados = {};
   Object.entries(st.resp).forEach(([k, v]) => { if (v && k !== c) usados[v] = true; });
   app.innerHTML = `
+    ${st.i === 0 ? `<div class="intro"><h2>Quem é essa <em>criança?</em></h2><p class="sub">São ${TOTAL} fotos de infância da turma. Para cada foto, escolha de quem você acha que é. Quem acertar mais leva a cesta de doces. O resultado só sai no final.</p></div>` : ""}
     <div class="topo"><span class="etiqueta">Criança ${st.i + 1} de ${TOTAL}</span><span class="dica">${respondidas()} respondidas</span></div>
     <div class="progresso"><div style="width:${(respondidas() / TOTAL) * 100}%"></div></div>
     <div class="polaroid" style="--giro:${giro(st.i)}">

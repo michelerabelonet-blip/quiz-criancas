@@ -95,3 +95,11 @@ label { font-weight: 700; display: block; margin-bottom: 6px; }
 .doce { font-size: 3.5rem; line-height: 1; }
 
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* Tela de entrada: só o nome, em destaque */
+.entrada { display: flex; flex-direction: column; gap: 18px; padding-top: 12vh; }
+.campo-nome { background: var(--cartao); border-radius: 22px; padding: 22px 20px; box-shadow: 0 14px 34px -18px rgba(43,33,64,.45); display: flex; flex-direction: column; gap: 10px; }
+.campo-nome label { font-family: var(--display); font-size: 1.7rem; font-weight: 800; margin: 0; }
+.campo-nome input { font-size: 1.3rem; padding: 18px 18px; border-width: 3px; }
+.intro { display: flex; flex-direction: column; gap: 8px; }
+h2 em { font-style: normal; color: var(--bala); }
