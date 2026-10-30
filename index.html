@@ -19,6 +19,17 @@ let st = { nome: "", i: 0, resp: {}, etapa: "inicio", enviado: false };
 try { const s = JSON.parse(localStorage.getItem(LS)); if (s) st = Object.assign(st, s); } catch (e) {}
 const salvar = () => { try { localStorage.setItem(LS, JSON.stringify(st)); } catch (e) {} };
 const app = document.getElementById("app");
+// identificador deste celular: guardado no navegador e num cookie
+function dispositivo() {
+  let id = null;
+  try { id = localStorage.getItem("quiz-criancas-disp"); } catch (e) {}
+  if (!id) { const m = document.cookie.match(/(?:^|; )qcdisp=([a-f0-9-]+)/); if (m) id = m[1]; }
+  if (!id) id = (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(16) + Math.random().toString(16).slice(2));
+  try { localStorage.setItem("quiz-criancas-disp", id); } catch (e) {}
+  document.cookie = "qcdisp=" + id + "; max-age=31536000; path=/; SameSite=Lax";
+  return id;
+}
+const DISP = dispositivo();
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const foto = c => "fotos/" + c + ".jpg";
 const giro = i => ((i * 37) % 5 - 2) * 0.8 + "deg";
@@ -95,10 +106,21 @@ function telaFoto() {
     }
     b.disabled = true; b.textContent = "Enviando...";
     try {
-      await rpc("quiz_enviar", { p_nome: st.nome, p_respostas: st.resp });
+      await rpc("quiz_enviar", { p_nome: st.nome, p_respostas: st.resp, p_dispositivo: DISP });
       st.enviado = true; salvar(); render();
     } catch (err) {
-      msg.hidden = false; msg.textContent = "Não foi possível enviar. Confira a internet e tente de novo.";
+      msg.hidden = false;
+      if (/JA_ENVIOU_CELULAR/.test(err.message)) {
+        msg.textContent = "Este celular já enviou respostas. Só vale uma participação por celular.";
+        b.textContent = "Já enviado";
+        return;
+      }
+      if (/JA_ENVIOU_NOME/.test(err.message)) {
+        msg.textContent = `Já existe uma resposta com o nome "${st.nome}". Se não foi você, fale com quem está organizando.`;
+        b.textContent = "Já enviado";
+        return;
+      }
+      msg.textContent = "Não foi possível enviar. Confira a internet e tente de novo.";
       b.disabled = false; b.textContent = "Enviar respostas";
     }
   };
