@@ -52,16 +52,17 @@ function telaInicio() {
     <p class="sub">São ${TOTAL} fotos de infância da turma. Para cada foto, escolha de quem você acha que é. Quem acertar mais leva a cesta de doces. O resultado só sai no final.</p>
     <div class="polaroid" style="--giro:-2deg"><div class="moldura"><img src="${foto(F[0])}" alt="Foto de infância"></div><div class="legenda vazia">quem será?</div></div>
     <form id="f">
-      <label for="nome">Seu nome</label>
-      <input type="text" id="nome" maxlength="60" autocomplete="name" placeholder="Ex.: Ana Luiza" value="${esc(st.nome)}" required>
+      <label for="nome">Seu nome e sobrenome</label>
+      <input type="text" id="nome" maxlength="60" autocomplete="name" placeholder="Ex.: Bruno Cortez" value="${esc(st.nome)}" required>
+      <p class="dica" style="margin-top:6px">Use o sobrenome: temos dois Brunos e duas Thais na turma.</p>
     </form>
     <p class="erro" id="msgIni" hidden></p>
     <div class="nav"><button class="btn" form="f" type="submit">Começar</button></div>`;
   document.getElementById("f").addEventListener("submit", async e => {
     e.preventDefault();
-    const v = document.getElementById("nome").value.trim();
-    if (!v) return;
+    const v = document.getElementById("nome").value.trim().replace(/\s+/g, " ");
     const b = app.querySelector("button[form=f]"), msg = document.getElementById("msgIni");
+    if (v.split(" ").length < 2) { msg.hidden = false; msg.textContent = "Digite seu nome e sobrenome."; return; }
     b.disabled = true; b.textContent = "Conferindo...";
     let r = "OK";
     try { r = await rpc("quiz_pode_participar", { p_nome: v, p_dispositivo: DISP }); } catch (err) {}
