@@ -103,3 +103,19 @@ label { font-weight: 700; display: block; margin-bottom: 6px; }
 .campo-nome input { font-size: 1.3rem; padding: 18px 18px; border-width: 3px; }
 .intro { display: flex; flex-direction: column; gap: 8px; }
 h2 em { font-style: normal; color: var(--bala); }
+
+/* Foto ampliada */
+.mini img { cursor: zoom-in; }
+.lb { position: fixed; inset: 0; z-index: 50; background: rgba(20,14,32,.94); color: #fff; display: flex; flex-direction: column;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+.lb-barra { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; }
+.lb-nome { font-family: var(--display); font-weight: 700; font-size: 1.4rem; min-width: 0; overflow-wrap: anywhere; }
+.lb-dica { font-size: .85rem; opacity: .75; text-align: center; }
+.lb-btn { appearance: none; border: 0; border-radius: 999px; background: rgba(255,255,255,.14); color: #fff; font: 700 .95rem var(--texto); padding: 10px 16px; cursor: pointer; white-space: nowrap; }
+.lb-btn:hover { background: rgba(255,255,255,.24); }
+.lb-btn:focus-visible { outline: 3px solid var(--caramelo); outline-offset: 2px; }
+.lb-area { flex: 1; min-height: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.lb-area img { max-width: 100%; max-height: 100%; object-fit: contain; cursor: zoom-in; user-select: none; -webkit-user-drag: none; }
+.lb.zoom .lb-area { overflow: auto; display: block; -webkit-overflow-scrolling: touch; }
+.lb.zoom .lb-area img { max-width: none; max-height: none; width: 250%; height: auto; cursor: zoom-out; }
+@media (min-width: 700px) { .lb.zoom .lb-area img { width: auto; height: 250%; } }
