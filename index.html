@@ -29,8 +29,7 @@ F.forEach(c => { const im = new Image(); im.src = foto(c); });
 
 function render() {
   if (st.enviado) return telaFim();
-  if (st.etapa === "inicio" || !st.nome) return telaInicio();
-  if (st.etapa === "revisao") return telaRevisao();
+  if (st.etapa !== "foto" || !st.nome) return telaInicio();
   telaFoto();
   window.scrollTo(0, 0);
 }
@@ -67,9 +66,11 @@ function telaFoto() {
     </div>
     <p class="dica">Cada pessoa aparece em uma foto só. Nomes já usados ficam marcados, mas você pode trocar.</p>
     <div class="nomes">${N.map(n => `<button type="button" class="nome ${n === atual ? "escolhido" : usados[n] ? "usado" : ""}" data-n="${esc(n)}">${esc(n)}</button>`).join("")}</div>
+    <p class="aviso" id="aviso" hidden></p>
+    <p class="erro" id="msg" hidden></p>
     <div class="nav">
       <button class="btn sec" id="ant" ${st.i === 0 ? "disabled" : ""}>Anterior</button>
-      <button class="btn" id="prox">${st.i === TOTAL - 1 ? "Revisar" : "Próxima"}</button>
+      <button class="btn" id="prox">${st.i === TOTAL - 1 ? "Enviar respostas" : "Próxima"}</button>
     </div>`;
   app.querySelectorAll(".nome").forEach(b => b.addEventListener("click", () => {
     const n = b.dataset.n;
@@ -80,29 +81,18 @@ function telaFoto() {
     else { render(); }
   }));
   document.getElementById("ant").onclick = () => { st.i--; salvar(); render(); };
-  document.getElementById("prox").onclick = () => {
-    if (st.i < TOTAL - 1) st.i++; else st.etapa = "revisao";
-    salvar(); render();
-  };
-}
-
-function telaRevisao() {
-  const faltam = TOTAL - respondidas();
-  app.innerHTML = `
-    <span class="etiqueta">Quase lá, ${esc(st.nome)}</span>
-    <h2>Confira suas respostas</h2>
-    <p class="sub">Toque em uma foto para mudar a resposta.</p>
-    ${faltam ? `<p class="aviso">Faltam ${faltam} foto${faltam > 1 ? "s" : ""} sem resposta. Elas contam como erro.</p>` : ""}
-    <div class="revisao">${F.map((c, i) => `<button class="mini" data-i="${i}"><img src="${foto(c)}" alt="Foto ${i + 1}"><span class="${st.resp[c] ? "" : "falta"}">${st.resp[c] ? esc(st.resp[c]) : "sem resposta"}</span></button>`).join("")}</div>
-    <p class="erro" id="msg" hidden></p>
-    <div class="nav">
-      <button class="btn sec" id="voltar">Voltar</button>
-      <button class="btn" id="enviar">Enviar respostas</button>
-    </div>`;
-  app.querySelectorAll(".mini").forEach(b => b.onclick = () => { st.i = +b.dataset.i; st.etapa = "foto"; salvar(); render(); });
-  document.getElementById("voltar").onclick = () => { st.etapa = "foto"; st.i = TOTAL - 1; salvar(); render(); };
-  document.getElementById("enviar").onclick = async e => {
-    const b = e.currentTarget, msg = document.getElementById("msg");
+  let confirmou = false;
+  document.getElementById("prox").onclick = async e => {
+    if (st.i < TOTAL - 1) { st.i++; salvar(); return render(); }
+    const b = e.currentTarget, aviso = document.getElementById("aviso"), msg = document.getElementById("msg");
+    const faltam = TOTAL - respondidas();
+    if (faltam && !confirmou) {
+      confirmou = true;
+      aviso.hidden = false;
+      aviso.textContent = `Faltam ${faltam} foto${faltam > 1 ? "s" : ""} sem resposta e elas contam como erro. Volte com "Anterior" para responder ou toque de novo para enviar assim mesmo.`;
+      b.textContent = "Enviar assim mesmo";
+      return;
+    }
     b.disabled = true; b.textContent = "Enviando...";
     try {
       await rpc("quiz_enviar", { p_nome: st.nome, p_respostas: st.resp });
@@ -115,11 +105,15 @@ function telaRevisao() {
 }
 
 function telaFim() {
-  app.className = "wrap fim";
   app.innerHTML = `
-    <span class="etiqueta">Respostas enviadas</span>
-    <h1>Valeu, <em>${esc(st.nome)}</em>!</h1>
-    <p class="sub">Você respondeu ${respondidas()} de ${TOTAL} fotos. O ranking e o vencedor da cesta de doces serão revelados no final da dinâmica.</p>`;
+    <div class="fim wrap" style="padding-top:4vh">
+      <span class="etiqueta">Respostas enviadas</span>
+      <h1>Valeu, <em>${esc(st.nome)}</em>!</h1>
+      <p class="sub">Você respondeu ${respondidas()} de ${TOTAL} fotos. O ranking e o vencedor da cesta de doces serão revelados no final da dinâmica.</p>
+    </div>
+    <h2>Seus palpites</h2>
+    <div class="revisao">${F.map((c, i) => `<div class="mini"><img src="${foto(c)}" alt="Foto ${i + 1}"><span class="${st.resp[c] ? "" : "falta"}">${st.resp[c] ? esc(st.resp[c]) : "sem resposta"}</span></div>`).join("")}</div>`;
+  window.scrollTo(0, 0);
 }
 
 render();

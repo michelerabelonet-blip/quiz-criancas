@@ -84,7 +84,7 @@ label { font-weight: 700; display: block; margin-bottom: 6px; }
 .nav .btn { flex: 1; }
 
 .revisao { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; }
-.mini { background: var(--cartao); padding: 6px 6px 8px; border-radius: 4px; box-shadow: 0 4px 12px -6px rgba(43,33,64,.3); cursor: pointer; border: 0; font: inherit; color: inherit; text-align: center; }
+.mini { background: var(--cartao); padding: 6px 6px 8px; border-radius: 4px; box-shadow: 0 4px 12px -6px rgba(43,33,64,.3); border: 0; font: inherit; color: inherit; text-align: center; }
 .mini img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #efe9f4; }
 .mini span { display: block; font-weight: 700; font-size: .85rem; padding-top: 6px; line-height: 1.2; }
 .mini span.falta { color: var(--bala); }
